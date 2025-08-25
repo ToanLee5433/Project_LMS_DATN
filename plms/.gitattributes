@@ -1,0 +1,12 @@
+# Ensure GitHub detects Python as the main language
+*.py linguist-language=Python
+*.html linguist-vendored
+*.css linguist-vendored
+*.js linguist-vendored
+*.json linguist-vendored
+
+# Django files
+*.pyc binary
+*.pyo binary
+__pycache__/ export-ignore
+.DS_Store export-ignore
