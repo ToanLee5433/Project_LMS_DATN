@@ -34,7 +34,7 @@ class AdaptiveQuizTests(TestCase):
         self.course = Course.objects.create(
             title="Test Course",
             code="TEST101",
-            instructor=self.teacher
+            owner=self.teacher
         )
         
         self.enrollment = Enrollment.objects.create(

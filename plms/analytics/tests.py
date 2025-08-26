@@ -111,8 +111,11 @@ class StudentAnalyticsTests(TestCase):
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('total_courses', response.data)
-        self.assertIn('total_quizzes_taken', response.data)
+        self.assertIn('avg_score', response.data)
+        self.assertIn('total_attempts', response.data)
+        self.assertIn('skill_stats', response.data)
+        self.assertIn('reviews_due', response.data)
+        self.assertIn('user_info', response.data)
 
 
 class AdminAnalyticsTests(TestCase):
@@ -123,7 +126,9 @@ class AdminAnalyticsTests(TestCase):
             username='admin',
             password='pass',
             email='admin@test.com',
-            role='admin'
+            role='admin',
+            is_staff=True,
+            is_superuser=True  # Cần cho IsAdminUser permission
         )
         
         self.client = APIClient()

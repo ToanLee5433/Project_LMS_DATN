@@ -133,5 +133,5 @@ class SpacedRepetitionTests(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_reviews'], 1)
-        self.assertEqual(response.data['due_today'], 0)
-        self.assertEqual(response.data['due_this_week'], 1)
+        self.assertEqual(response.data['reviews_due_today'], 0)
+        self.assertEqual(response.data['overdue_reviews'], 0)
