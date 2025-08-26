@@ -14,6 +14,11 @@ from .views_adaptive import (
     AdaptiveFinishAPI,
     AdaptiveStatusAPI
 )
+from .views_sr import (
+    SRReviewAPI,
+    SRStatsAPI,
+    SRBulkUpdateAPI
+)
 
 router = DefaultRouter()
 router.register(r'quizzes', QuizViewSet)
@@ -30,4 +35,9 @@ urlpatterns = [
     path('adaptive/<int:attempt_id>/answer/', AdaptiveAnswerAPI.as_view(), name='adaptive_answer'),
     path('adaptive/<int:attempt_id>/finish/', AdaptiveFinishAPI.as_view(), name='adaptive_finish'),
     path('adaptive/<int:attempt_id>/status/', AdaptiveStatusAPI.as_view(), name='adaptive_status'),
+    
+    # Spaced Repetition endpoints
+    path('sr/reviews/', SRReviewAPI.as_view(), name='sr_reviews'),
+    path('sr/stats/', SRStatsAPI.as_view(), name='sr_stats'),
+    path('sr/bulk-update/', SRBulkUpdateAPI.as_view(), name='sr_bulk_update'),
 ]

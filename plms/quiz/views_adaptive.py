@@ -8,6 +8,7 @@ from datetime import timedelta
 from lms.models import Enrollment
 from .models import Quiz, Question, Attempt
 from .adaptive import pick_next_question, update_theta
+from .sr_utils import update_review_after_attempt
 
 
 def grade_one(question, given):
@@ -296,12 +297,34 @@ class AdaptiveFinishAPI(APIView):
         att.end_at = timezone.now()
         att.save(update_fields=["score", "submitted", "end_at"])
         
+        # Tích hợp Spaced Repetition cho adaptive quiz
+        try:
+            if answers:
+                for answer_data in answers:
+                    try:
+                        question = Question.objects.get(id=answer_data['question_id'])
+                        correct = answer_data.get('correct', False)
+                        
+                        # Tự động tạo/cập nhật AttemptReview
+                        update_review_after_attempt(
+                            user=request.user,
+                            question=question,
+                            correct=correct,
+                            attempt=att
+                        )
+                    except Question.DoesNotExist:
+                        continue
+        except Exception as e:
+            # Log error nhưng không fail
+            print(f"SR Integration error in adaptive finish: {e}")
+        
         return Response({
             "attempt_id": att.id,
             "score": score,
             "ability": round(att.ability_estimate or 0.5, 4),
             "questions_answered": len(answers),
-            "answers": answers
+            "answers": answers,
+            "sr_enabled": True
         })
 
 

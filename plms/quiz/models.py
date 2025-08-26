@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import date
 from lms.models import Course
 
 
@@ -89,3 +91,42 @@ class Attempt(models.Model):
     def __str__(self):
         status = "Submitted" if self.submitted else "In Progress"
         return f"{self.user.username} - {self.quiz.title} ({status})"
+
+
+class AttemptReview(models.Model):
+    """
+    Spaced Repetition model để theo dõi lịch ôn tập câu hỏi
+    Sử dụng thuật toán SM-2 variant
+    """
+    attempt = models.ForeignKey(
+        'Attempt', 
+        on_delete=models.CASCADE, 
+        related_name="reviews", 
+        null=True, 
+        blank=True
+    )  # Liên kết với attempt gốc nếu cần
+    question = models.ForeignKey('Question', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    quality = models.IntegerField(
+        default=3, 
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )  # 0..5 (chất lượng nhớ)
+    interval = models.PositiveIntegerField(default=1)  # ngày
+    repetition = models.PositiveIntegerField(default=0)  # số lần lặp
+    efactor = models.FloatField(default=2.5)  # ease factor
+    next_review = models.DateField(default=date.today)  # ngày review tiếp theo
+    last_review = models.DateField(null=True, blank=True)  # ngày review cuối cùng
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'quiz'
+        unique_together = ("user", "question")
+        indexes = [models.Index(fields=["user", "next_review"])]
+
+    def clean(self):
+        if self.quality < 0 or self.quality > 5:
+            raise ValidationError("Quality must be between 0 and 5.")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.question.content[:50]}... (Next: {self.next_review})"

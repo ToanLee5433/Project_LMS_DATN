@@ -9,6 +9,7 @@ from .models import Quiz, Question, Attempt
 from .serializers import QuizSerializer, QuestionSerializer, AttemptSerializer, AttemptDetailSerializer
 from .permissions import IsTeacherOrAdmin, IsQuizOwnerOrAdmin
 from .utils import grade_fixed
+from .sr_utils import update_review_after_attempt
 from lms.models import Enrollment
 
 
@@ -214,11 +215,33 @@ def submit_attempt(request):
     attempt.detail = detail
     attempt.submitted = True
     attempt.save()
+    
+    # Tích hợp Spaced Repetition tự động
+    try:
+        if detail and 'answers' in detail:
+            for answer_data in detail['answers']:
+                try:
+                    question = Question.objects.get(id=answer_data['question_id'])
+                    correct = answer_data.get('correct', False)
+                    
+                    # Tự động tạo/cập nhật AttemptReview
+                    update_review_after_attempt(
+                        user=request.user,
+                        question=question,
+                        correct=correct,
+                        attempt=attempt
+                    )
+                except Question.DoesNotExist:
+                    continue  # Skip nếu question không tồn tại
+    except Exception as e:
+        # Log error nhưng không fail toàn bộ submit
+        print(f"SR Integration error: {e}")
 
     return Response({
         "attempt_id": attempt.id,
         "score": score,
         "total_points": attempt.quiz.total_points,
         "percentage": round((score / attempt.quiz.total_points) * 100, 2) if attempt.quiz.total_points > 0 else 0,
-        "message": "Nộp bài thành công!"
+        "message": "Nộp bài thành công!",
+        "sr_enabled": True  # Indicator rằng SR đã được tích hợp
     }, status=status.HTTP_200_OK)
